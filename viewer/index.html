@@ -300,8 +300,8 @@
     <div ng-click="showUserLocation()" class="find-me-box-parent box-shadow-1">
         <div id="find-me-box">
             <span>
-                <img ng-show="getIsUserLocVisible()" width="25" height="25" src="build/images/html5-location-blue.png">
-                <img ng-hide="getIsUserLocVisible()" width="25" height="25" src="build/images/html5-location-grey.png">
+                <img  ng-show="getIsUserLocVisible()" width="25" height="25" src="build/images/html5-location-blue.png">
+                <img id="find-me-image" ng-hide="getIsUserLocVisible()" width="25" height="25" src="build/images/html5-location-grey.png">
             </span>
         </div>
     </div>
@@ -340,7 +340,10 @@
     function getLocation() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(showPosition);
+    if(!getParameterByName("buid")){
+
             responsiveVoice.speak("Welcome!! please share your location","Hindi Female",{rate: 0.8});
+        }
         } else {
              responsiveVoice.speak("Geolocation is not supported by this browser","Hindi Female",{rate: 0.8});
         }
@@ -357,6 +360,7 @@
                 "coordinates_lat":lat.toString(),
                 "coordinates_lon":lon.toString()
             };
+    if(!getParameterByName("buid")){
 
         $.ajax({
             url:"http://anyplace.rayzit.com/anyplace/mapping/building/coordinates",
@@ -373,7 +377,8 @@
                         buldings.push({
                             'building_desc':w.description,
                             'building_id':w.buid
-                        })
+                        });
+                        responsiveVoice.speak("Building Name","Hindi Female",{rate: 0.8});
                         responsiveVoice.speak(w.description,"Hindi Female",{rate: 0.8});
                     });
                     if ( SPEECH.isCapable() ) { // the browser supports speech recognition
@@ -438,10 +443,14 @@
             responsiveVoice.speak("Sorry!! Something went wrong","Hindi Female",{rate: 0.8});
             }
         });
+        }
+        else{
+            window.onload=function(){
+                $('#find-me-image').trigger('click');
+            }
+        }
     }
-    if(!getParameterByName("buid")){
            getLocation();
-    }
  
 
      });
