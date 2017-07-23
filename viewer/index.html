@@ -1,7 +1,7 @@
 <html ng-app="anyViewer">
 <head>
 
-    <link rel="icon" type="image/png" href="build/images/logo.png">
+    <link rel="icon" type="image/png" href="build/images/our_logo.png">
 
     <link rel="apple-touch-icon-precomposed" href="build/images/ios-icons/touch-icon-ipad.png"/>
     <link rel="apple-touch-icon" href="build/images/ios-icons/touch-icon-iphone.png">
@@ -154,7 +154,7 @@
     <div class="container-fluid" id="gray-bg">
 
         <div class="col-md-1 col-sm-2 col-xs-2 " id="div-logo">
-            <img style="width: 75px; height: auto" src="build/images/anyplace_logo_text_white.png"/>
+            <img style="width: 75px; height: auto" src="build/images/our_logo.png"/>
         </div>
 
         <!-- BUILDINGS -->
@@ -332,33 +332,118 @@
     <script src="//cdn.flurry.com/js/flurry.js"></script>
     <script>FlurryAgent.startSession("CTSR4NQFNXTQZHRR3C3V");</script>
 </footer>
+  <script type="text/javascript" src="build/js/voice-commands.js"></script>
+  <script type="text/javascript" src="build/js/responsivevoice.js"></script>
 <script type="text/javascript">
     $(document).ready(function(){
-        setTimeout(function(){
-var longitude= "33.53040922433138";
-      var latitude="35.249939235531684";
-                    var posLatlng = {lat: latitude, lng: longitude};
-                    // var myLocMarker=test(posLatlng);
+      //var x = document.getElementById("demo");
+    function getLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(showPosition);
+            responsiveVoice.speak("Welcome!! please share your location","Hindi Female",{rate: 0.8});
+        } else {
+             responsiveVoice.speak("Geolocation is not supported by this browser","Hindi Female",{rate: 0.8});
+        }
+    }
+    function getParameterByName(name) {
+        name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"), results = regex.exec(location.search);
+        return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+    function showPosition(position) {
+        var lat=position.coords.latitude,
+            lon=position.coords.longitude,
+            datasend={       
+                "coordinates_lat":lat.toString(),
+                "coordinates_lon":lon.toString()
+            };
 
-//            var LatLng = new google.maps.LatLng(latitude, longitude);
-//             var mapOptions = {
-//                 zoom: 15,
-//                 center: LatLng,
-//                 panControl: false,
-//                 zoomControl: false,
-//                 scaleControl: true,
-//                 mapTypeId: google.maps.MapTypeId.ROADMAP
-//             };
-//             var map=map.__data__;
-//             var marker = new google.maps.Marker({
-//                 position: LatLng,
-//                 map:map,
-//                 title: 'Drag to specify your address',
-//                 draggable: true
-//             });
-            console.log('exe');
-        },0);
-      
+        $.ajax({
+            url:"http://anyplace.rayzit.com/anyplace/mapping/building/coordinates",
+            contentType: "application/json",
+            dataType: "json",
+            type:"POST",
+            data:JSON.stringify(datasend),
+            success:function(data){
+                var isCommand=false;
+                var buldings=[];
+                if(data.buildings.length){
+                    responsiveVoice.speak("Please Select Building ","Hindi Female",{rate: 0.8});
+                    $.each(data.buildings,function(i,w){
+                        buldings.push({
+                            'building_desc':w.description,
+                            'building_id':w.buid
+                        })
+                        responsiveVoice.speak(w.description,"Hindi Female",{rate: 0.8});
+                    });
+                    if ( SPEECH.isCapable() ) { // the browser supports speech recognition
+                        SPEECH.onStart(function() {
+                            // fires once browser recognition has started
+                        });
+                        SPEECH.onStop(function() {
+                            // fires when speech is manually stopped, or on error
+                        });
+                        SPEECH.min_confidence = .2; // the default minimum confidence you're willing to accept as a command
+                        SPEECH.addVoiceCommands([
+                            {
+                                command: "show help",
+                                callback: function() {
+                                    // do something when the user says "show help". Maybe open a help dialog!
+                                },
+                                min_confidence: .5 // you can set a confidence level for each command individually
+                            },
+                            {
+                                command: /next (slide)?/,
+                                callback: function() {
+                                    // this would fire when the user says "next" OR "next slide"
+                                    // using a regex like that makes the voice command recognition
+                                    // a bit more forgiving
+                                }
+                            },
+                            {
+                                command: /go.+(to)/, // regex to match commands more dynamically
+                                callback: function() {
+
+                                    isCommand=true;
+                                }
+                            }
+                        ]);
+                        SPEECH.onResult(function(result) {
+                            // fires after commands set via addVoiceCommands are parsed.
+                            if(isCommand){
+                               $.each(buldings,function(i,w){
+                                var text=(w.building_desc.toLowerCase());
+                                var count=result.transcript.indexOf(text);
+                                        if(count>-1){
+                                         window.location.href="/?buid="+w.building_id;
+                                        }
+                                    });
+                               isCommand=false;
+                            }
+                        });
+
+                        // gets things going. when speech recognition is ready,
+                        // onStart will be called.
+                        SPEECH.start({
+                            min_confidence: .3 // you can also pass config here
+                        });
+                    }
+                }
+                else{
+            responsiveVoice.speak("Sorry!! No Buildings found near you","Hindi Female",{rate: 0.8});
+
+                }
+            },
+            error:function(data){
+            responsiveVoice.speak("Sorry!! Something went wrong","Hindi Female",{rate: 0.8});
+            }
+        });
+    }
+    if(!getParameterByName("buid")){
+           getLocation();
+    }
+ 
+
      });
 </script>
 </html>
